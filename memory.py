@@ -75,7 +75,7 @@ class Game:
 
     def updateBoard(self, board):
         for card in Card.card_list:
-            pygame.draw.rect(DISPLAY, card.face_color, [
+            card.rect = pygame.draw.rect(DISPLAY, card.face_color, [
                     (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
                     (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
                     CELLSIZE, CELLSIZE
@@ -103,13 +103,19 @@ def main():
                 sys.exit()
             elif event.type == MOUSEMOTION:
                 mouse_x, mouse_y = event.pos
+                pos_x = (mouse_x - X_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
+                pos_y = (mouse_y - Y_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
+
+                for card in Card.card_list:
+                    if card.rect.collidepoint(mouse_x, mouse_y):
+                        card.face_color = CARD
+
+
             elif event.type == MOUSEBUTTONUP:
                 mouse_x, mouse_y = event.pos
                 pos_x = (mouse_x - X_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
                 pos_y = (mouse_y - Y_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
-                for card in Card.card_list:
-                    if pos_x == card.x and pos_y == card.y:
-                        card.face_color = BOARD
+
 
         game.updateBoard(board)
         pygame.display.flip()
