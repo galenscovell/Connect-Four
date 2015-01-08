@@ -1,15 +1,17 @@
 
 import pygame, random, sys
+from card import Card
 from pygame.locals import *
 
 
 # Constant setup
-WINDOW_X    = 640
-WINDOW_Y    = 480
-BOARD_X     = 8
-BOARD_Y     = 4
-CELLSIZE    = 40
-CELL_MARGIN = 10
+WINDOW_X     = 640
+WINDOW_Y     = 480
+BOARD_X      = 8
+BOARD_Y      = 4
+CELLSIZE     = 60
+CELL_MARGIN  = 10
+REVEAL_SPEED = 20
 X_MARGIN = int((WINDOW_X - (BOARD_X * (CELLSIZE + CELL_MARGIN))) / 2)
 Y_MARGIN = int((WINDOW_Y - (BOARD_Y * (CELLSIZE + CELL_MARGIN))) / 2)
 
@@ -35,9 +37,16 @@ COLOR_LIST = (COLOR_1, COLOR_2, COLOR_3, COLOR_4)
 
 assert len(SHAPE_LIST) * len(COLOR_LIST) * 2 == (BOARD_X * BOARD_Y), "Board options must match board size."
 
+# Pygame initial setup
+pygame.init()
+DISPLAY = pygame.display.set_mode((WINDOW_X, WINDOW_Y))
+pygame.display.set_caption('Memory')
+
 
 class Game:
-    def createBoard(self):
+    'Game mechanics and creation'
+
+    def createIcons(self):
         icon_list = []
         for color in COLOR_LIST:
             for shape in SHAPE_LIST:
@@ -45,36 +54,45 @@ class Game:
 
         icon_list *= 2
         random.shuffle(icon_list)
+        return icon_list
 
+    def createBoard(self, icons):
         board = []
         for x in range(BOARD_X):
             column = []
             for y in range(BOARD_Y):
-                column.append(icon_list[0])
-                del icon_list[0]
+                card = Card(x, y, icons)
+                column.append(card)
+                del icons[0]
             board.append(column)
+        pygame.draw.rect(DISPLAY, BOARD, [
+                X_MARGIN / 2, 
+                Y_MARGIN / 2, 
+                WINDOW_X - X_MARGIN, 
+                WINDOW_Y - Y_MARGIN
+            ])
         return board
 
     def updateBoard(self, board):
-        for x in range(BOARD_X):
-            for y in range(BOARD_Y):
-                print('Nada')
+        for card in Card.card_list:
+            pygame.draw.rect(DISPLAY, card.face_color, [
+                    (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
+                    (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
+                    CELLSIZE, CELLSIZE
+                ])
+
 
 
 def main():
-    # Pygame initial setup
-    pygame.init()
-    DISPLAY = pygame.display.set_mode((WINDOW_X, WINDOW_Y))
-    pygame.display.set_caption('Memory')
     fpsClock = pygame.time.Clock()
-
 
     creating_board = True
     while creating_board:
         DISPLAY.fill(BACKGROUND)
         game = Game()
-        board = game.createBoard()
-        print(board)
+        icons = game.createIcons()
+        board = game.createBoard(icons)
+        game.updateBoard(board)
         creating_board = False
 
     running = True
@@ -83,7 +101,17 @@ def main():
             if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
+            elif event.type == MOUSEMOTION:
+                mouse_x, mouse_y = event.pos
+            elif event.type == MOUSEBUTTONUP:
+                mouse_x, mouse_y = event.pos
+                pos_x = (mouse_x - X_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
+                pos_y = (mouse_y - Y_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
+                for card in Card.card_list:
+                    if pos_x == card.x and pos_y == card.y:
+                        card.face_color = BOARD
 
+        game.updateBoard(board)
         pygame.display.flip()
         fpsClock.tick(10)
 
