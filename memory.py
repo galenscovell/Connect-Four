@@ -5,13 +5,14 @@ from pygame.locals import *
 
 
 # Constant setup
+FPS          = 20
 WINDOW_X     = 640
 WINDOW_Y     = 480
 BOARD_X      = 8
 BOARD_Y      = 4
 CELLSIZE     = 60
 CELL_MARGIN  = 10
-REVEAL_SPEED = 20
+REVEAL_SPEED = 4
 X_MARGIN = int((WINDOW_X - (BOARD_X * (CELLSIZE + CELL_MARGIN))) / 2)
 Y_MARGIN = int((WINDOW_Y - (BOARD_Y * (CELLSIZE + CELL_MARGIN))) / 2)
 
@@ -24,8 +25,9 @@ OVAL    = 'oval'
 
 # Color setup
 BACKGROUND = (142,  68, 173)
-BOARD      = ( 44,  62,  80)
-CARD       = (236, 240, 241)
+BOARD_C    = ( 44,  62,  80)
+CARD_C     = ( 39, 174,  96)
+SELECTED_C = (243, 156,  18)
 COLOR_1    = ( 46, 204, 113)
 COLOR_2    = (241, 196,  15)
 COLOR_3    = ( 52, 152, 219)
@@ -65,7 +67,7 @@ class Game:
                 column.append(card)
                 del icons[0]
             board.append(column)
-        pygame.draw.rect(DISPLAY, BOARD, [
+        pygame.draw.rect(DISPLAY, BOARD_C, [
                 X_MARGIN / 2, 
                 Y_MARGIN / 2, 
                 WINDOW_X - X_MARGIN, 
@@ -74,12 +76,35 @@ class Game:
         return board
 
     def updateBoard(self, board):
-        for card in Card.card_list:
-            card.rect = pygame.draw.rect(DISPLAY, card.face_color, [
-                    (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
-                    (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
-                    CELLSIZE, CELLSIZE
-                ])
+        for card in Card.instances:
+            if card.mode == 0:
+                card.rect = pygame.draw.rect(DISPLAY, CARD_C, [
+                        (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
+                        (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
+                        CELLSIZE, CELLSIZE
+                    ])
+            elif card.mode == 1:
+                card.rect = pygame.draw.rect(DISPLAY, card.highlight, [
+                        (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
+                        (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
+                        CELLSIZE, CELLSIZE
+                    ])
+            elif card.mode == 2:
+                card.rect = pygame.draw.rect(DISPLAY, SELECTED_C, [
+                        (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
+                        (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
+                        CELLSIZE, CELLSIZE
+                    ])
+
+    def guessCard(self, card, first_guess):
+        card.mode = 2
+        print(first_guess.icon, first_guess.color, card.icon, card.color)
+        if card == first_guess:
+            pass
+        elif card.icon == first_guess.icon and card.color == first_guess.color:
+            print("Correct")
+        card.mode = 0
+        first_guess.mode = 0
 
 
 
@@ -96,6 +121,7 @@ def main():
         creating_board = False
 
     running = True
+    first_selected = False
     while running:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
@@ -103,23 +129,29 @@ def main():
                 sys.exit()
             elif event.type == MOUSEMOTION:
                 mouse_x, mouse_y = event.pos
-                pos_x = (mouse_x - X_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
-                pos_y = (mouse_y - Y_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
-
-                for card in Card.card_list:
-                    if card.rect.collidepoint(mouse_x, mouse_y):
-                        card.face_color = CARD
-
+                for card in Card.instances:
+                    if card.mode != 2:
+                        if card.rect.collidepoint(mouse_x, mouse_y):
+                            card.mode = 1
+                        else:
+                            card.mode = 0
 
             elif event.type == MOUSEBUTTONUP:
                 mouse_x, mouse_y = event.pos
-                pos_x = (mouse_x - X_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
-                pos_y = (mouse_y - Y_MARGIN - (CELL_MARGIN / 2)) // (CELLSIZE + CELL_MARGIN)
+                for card in Card.instances:
+                    if card.rect.collidepoint(mouse_x, mouse_y):
+                        if first_selected:
+                            first_selected = False
+                            game.guessCard(card, first_guess)
+                        else:
+                            card.mode = 2
+                            first_guess = card
+                            first_selected = True
 
 
         game.updateBoard(board)
         pygame.display.flip()
-        fpsClock.tick(10)
+        fpsClock.tick(FPS)
 
 if __name__ == "__main__":
     main()
