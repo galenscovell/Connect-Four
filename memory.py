@@ -1,5 +1,5 @@
 
-import pygame, random, sys
+import pygame, random, sys, time
 from card import Card
 from pygame.locals import *
 
@@ -24,7 +24,6 @@ CIRCLE  = 'oval'
 
 
 #---------- Colors ----------#
-FONT        = ( 89, 171, 227)  # Picton Blue
 BACKGROUND  = ( 44,  62,  80)  
 BOARD       = ( 82, 179, 217)
 BOARDSHADOW = ( 41, 128, 185)
@@ -52,14 +51,8 @@ assert len(SHAPE_LIST) * len(COLOR_LIST) * 2 == (BOARD_X * BOARD_Y), "Board opti
 #---------- Pygame init ----------#
 pygame.init()
 DISPLAY = pygame.display.set_mode((WINDOW_X, WINDOW_Y))
+DISPLAY.convert_alpha()
 pygame.display.set_caption('Memory')
-
-#---------- Fonts ----------#
-fontObj = pygame.font.Font('OpenSans-Regular.ttf', 32)
-textSurfaceObj = fontObj.render('MEMORY', True, FONT, BACKGROUND)
-textRectObj = textSurfaceObj.get_rect()
-textRectObj.center = ((WINDOW_X / 2), 20)
-
 
 
 class Game:
@@ -74,7 +67,6 @@ class Game:
         random.shuffle(icon_list)
         return icon_list
 
-
     def createBoard(self, icons):
         board = []
         for x in range(BOARD_X):
@@ -88,7 +80,6 @@ class Game:
         pygame.draw.rect(DISPLAY, BOARD, [X_MARGIN / 2, Y_MARGIN / 2, WINDOW_X - X_MARGIN, WINDOW_Y - Y_MARGIN])
         return board
 
-
     def updateBoard(self, board):
         for card in Card.instances:
             if card.mode == 0:
@@ -98,7 +89,6 @@ class Game:
             elif card.mode == 2:
                 self.drawCard(card, card.color)
                 self.drawCardIcon(card)
-
 
 
     #---------- Card Creation/Updating ----------#
@@ -112,12 +102,10 @@ class Game:
             (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
             CELLSIZE, CELLSIZE])
 
-
     def leftTopCoords(self, card):
         left = int((CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2))
         top = int((CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2))
         return (left, top)
-
 
     def drawCardIcon(self, card):
         if card.color == COLOR_1:
@@ -128,7 +116,6 @@ class Game:
             tint = TINT_3
         elif card.color == COLOR_4:
             tint = TINT_4
-
         half = int(CELLSIZE * 0.5)
         quarter = int(CELLSIZE * 0.25)
         left, top = self.leftTopCoords(card)
@@ -150,7 +137,7 @@ class Game:
         card.mode = 0
 
     def showCard(self, card, clock):
-        for coverage in range(0, 60, 4):
+        for coverage in range(0, 60, 6):
             pygame.draw.rect(DISPLAY, card.color, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, CELLSIZE])
             pygame.draw.rect(DISPLAY, HIDDEN, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, 60 - coverage])
             pygame.display.flip()
@@ -158,14 +145,19 @@ class Game:
         Card.guesses.append(card)
         card.mode = 2
 
-
-
+    def updateText(self):
+        remaining = str(round((len(Card.instances) - len(Card.correct)) / 2))
+        fontObj = pygame.font.Font('OpenSans-Light.ttf', 24)
+        textObj = fontObj.render('Remaining: ' + remaining, True, HIGHLIGHT, BACKGROUND)
+        textRect = textObj.get_rect()
+        textRect.center = ((WINDOW_X / 2), 24)
+        DISPLAY.fill(BACKGROUND, (0, 0, WINDOW_X, 50))
+        DISPLAY.blit(textObj, textRect)
 
     #---------- Guessing ----------#
     def checkGuess(self, clock):
         pygame.time.wait(500)
-        first = Card.guesses[0]
-        second = Card.guesses[1]
+        first, second = Card.guesses[0], Card.guesses[1]
         if first.color == second.color and first.icon == second.icon:
             Card.correct.append(first)
             Card.correct.append(second)
@@ -173,13 +165,14 @@ class Game:
         else:
             for card in Card.guesses:
                 self.hideCard(card, clock)
-                card.mode = 0
             del Card.guesses[:]
+
+
+
 
 
 def main():
     clock = pygame.time.Clock()
-
     creating_board = True
     while creating_board:
         DISPLAY.fill(BACKGROUND)
@@ -187,6 +180,7 @@ def main():
         icons = game.createIconList()
         board = game.createBoard(icons)
         game.updateBoard(board)
+        game.updateText()
         creating_board = False
 
     random.shuffle(Card.instances)
@@ -195,9 +189,10 @@ def main():
 
     guesses = 0
     running = True
+    startTime = time.time()
     while running:
         for event in pygame.event.get():
-            if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
             elif event.type == MOUSEMOTION:
@@ -218,7 +213,7 @@ def main():
                             game.showCard(card, clock)
 
         game.updateBoard(board)
-        DISPLAY.blit(textSurfaceObj, textRectObj)
+        game.updateText()
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -227,8 +222,25 @@ def main():
             game.checkGuess(clock)
             guesses = 0
 
+        # If all cards present in 'correct' instances, game over
         if len(Card.correct) == len(Card.instances):
-            print("All matches complete.")
+            timeTotal = str(round(time.time() - startTime, 2))
+            win = DISPLAY.convert_alpha()
+            for alpha in range(0, 30):
+                pygame.draw.rect(win, (236, 240, 241, alpha), [0, 0, WINDOW_X, WINDOW_Y])
+                DISPLAY.blit(win, (0, 0))
+                pygame.display.flip()
+                clock.tick(FPS)
+
+            fontObj = pygame.font.Font('OpenSans-Regular.ttf', 36)
+            textObj = fontObj.render('Completed in ' + timeTotal + 's', False, BACKGROUND)
+            textRect = textObj.get_rect()
+            textRect.center = ((WINDOW_X / 2), (WINDOW_Y / 2))
+            DISPLAY.blit(textObj, textRect)
+
+            pygame.display.flip()
+            clock.tick(FPS)
+            pygame.time.wait(3000)
             pygame.quit()
             sys.exit()
 
