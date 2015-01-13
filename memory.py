@@ -56,7 +56,7 @@ pygame.display.set_caption('Memory')
 
 #---------- Fonts ----------#
 fontObj = pygame.font.Font('OpenSans-Regular.ttf', 32)
-textSurfaceObj = fontObj.render('Memory', True, FONT, BACKGROUND)
+textSurfaceObj = fontObj.render('MEMORY', True, FONT, BACKGROUND)
 textRectObj = textSurfaceObj.get_rect()
 textRectObj.center = ((WINDOW_X / 2), 20)
 
@@ -84,7 +84,7 @@ class Game:
                 column.append(card)
                 del icons[0]
             board.append(column)
-        pygame.draw.rect(DISPLAY, BOARDSHADOW, [X_MARGIN / 2, Y_MARGIN / 2, WINDOW_X - X_MARGIN, WINDOW_Y - Y_MARGIN + 6])
+        pygame.draw.rect(DISPLAY, BOARDSHADOW, [X_MARGIN / 2, Y_MARGIN / 2, WINDOW_X - X_MARGIN, WINDOW_Y - Y_MARGIN + 4])
         pygame.draw.rect(DISPLAY, BOARD, [X_MARGIN / 2, Y_MARGIN / 2, WINDOW_X - X_MARGIN, WINDOW_Y - Y_MARGIN])
         return board
 
@@ -103,8 +103,14 @@ class Game:
 
     #---------- Card Creation/Updating ----------#
     def drawCard(self, card, color):
-        pygame.draw.rect(DISPLAY, CARDSHADOW, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, CELLSIZE])
-        card.rect = pygame.draw.rect(DISPLAY, color, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2) - 1, CELLSIZE, CELLSIZE - 3])
+        pygame.draw.rect(DISPLAY, CARDSHADOW, [
+            (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
+            (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2) + CELLSIZE - 1, 
+            CELLSIZE, 4])
+        card.rect = pygame.draw.rect(DISPLAY, color, [
+            (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
+            (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
+            CELLSIZE, CELLSIZE])
 
 
     def leftTopCoords(self, card):
@@ -127,27 +133,37 @@ class Game:
         quarter = int(CELLSIZE * 0.25)
         left, top = self.leftTopCoords(card)
         if card.icon == DONUT:
-            pygame.draw.circle(DISPLAY, tint, (left + half, top + half - 2), half - 10)
-            pygame.draw.circle(DISPLAY, card.color, (left + half, top + half - 2), quarter - 2)
+            pygame.draw.circle(DISPLAY, tint, (left + half, top + half), half - 10)
+            pygame.draw.circle(DISPLAY, card.color, (left + half, top + half), quarter - 2)
         elif card.icon == SQUARE:
-            pygame.draw.rect(DISPLAY, tint, (left + quarter, top + quarter - 2, CELLSIZE - half, CELLSIZE - half))
+            pygame.draw.rect(DISPLAY, tint, (left + quarter, top + quarter, CELLSIZE - half, CELLSIZE - half))
         elif card.icon == DIAMOND:
-            pygame.draw.polygon(DISPLAY, tint, ((left + half, top + 6), (left + CELLSIZE - 10, top + half - 4), (left + half, top + CELLSIZE - 14), (left + 10, top + half - 4)))
+            pygame.draw.polygon(DISPLAY, tint, ((left + half, top + 6), (left + CELLSIZE - 10, top + half + 4), (left + half, top + CELLSIZE - 8), (left + 10, top + half + 4)))
         elif card.icon == CIRCLE:
-            pygame.draw.circle(DISPLAY, tint, (left + half, top + half - 2), half - 10)
+            pygame.draw.circle(DISPLAY, tint, (left + half, top + half), half - 10)
 
     def hideCard(self, card, clock):
-        for coverage in range(0, 57, 2):
-            pygame.draw.rect(DISPLAY, HIDDEN, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, coverage])
+        for coverage in range(0, 60, 4):
+            pygame.draw.rect(DISPLAY, HIDDEN, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, coverage + 4])
             pygame.display.flip()
             clock.tick(FPS)
         card.mode = 0
+
+    def showCard(self, card, clock):
+        for coverage in range(0, 60, 4):
+            pygame.draw.rect(DISPLAY, card.color, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, CELLSIZE])
+            pygame.draw.rect(DISPLAY, HIDDEN, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, 60 - coverage])
+            pygame.display.flip()
+            clock.tick(FPS)
+        Card.guesses.append(card)
+        card.mode = 2
 
 
 
 
     #---------- Guessing ----------#
-    def checkGuess(self):
+    def checkGuess(self, clock):
+        pygame.time.wait(500)
         first = Card.guesses[0]
         second = Card.guesses[1]
         if first.color == second.color and first.icon == second.icon:
@@ -156,6 +172,7 @@ class Game:
             del Card.guesses[:]
         else:
             for card in Card.guesses:
+                self.hideCard(card, clock)
                 card.mode = 0
             del Card.guesses[:]
 
@@ -172,10 +189,9 @@ def main():
         game.updateBoard(board)
         creating_board = False
 
+    random.shuffle(Card.instances)
     for card in Card.instances:
         game.hideCard(card, clock)
-        pygame.display.flip()
-        clock.tick(FPS)
 
     guesses = 0
     running = True
@@ -197,20 +213,27 @@ def main():
                 mouse_x, mouse_y = event.pos
                 if guesses < 2:
                     for card in Card.instances:
-                        if card.rect.collidepoint(mouse_x, mouse_y) and card not in Card.correct:
+                        if card.rect.collidepoint(mouse_x, mouse_y) and card not in Card.correct and card not in Card.guesses:
                             guesses += 1
-                            card.revealCard()
-                            pygame.display.flip()
-                            clock.tick(FPS)
-
-        if guesses == 2:
-            game.checkGuess()
-            guesses = 0
+                            game.showCard(card, clock)
 
         game.updateBoard(board)
         DISPLAY.blit(textSurfaceObj, textRectObj)
         pygame.display.flip()
         clock.tick(FPS)
+
+        # If two guesses made by end of frame, check for match
+        if guesses == 2:
+            game.checkGuess(clock)
+            guesses = 0
+
+        if len(Card.correct) == len(Card.instances):
+            print("All matches complete.")
+            pygame.quit()
+            sys.exit()
+
+
+
 
 if __name__ == "__main__":
     main()

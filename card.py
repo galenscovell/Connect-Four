@@ -15,7 +15,3 @@ class Card:
         self.color = icons[0][1]
         self.rect = (0, 0, [0, 0, 0, 0])
         Card.instances.append(self)
-
-    def revealCard(self):
-        Card.guesses.append(self)
-        self.mode = 2
