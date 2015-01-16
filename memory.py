@@ -57,7 +57,7 @@ pygame.display.set_caption('Memory')
 
 class Game:
     #---------- Board Creation/Updating ----------#
-    def createIconList(self):
+    def create_icon_list(self):
         icon_list = []
         for color in COLOR_LIST:
             for shape in SHAPE_LIST:
@@ -67,7 +67,7 @@ class Game:
         random.shuffle(icon_list)
         return icon_list
 
-    def createBoard(self, icons):
+    def create_board(self, icons):
         board = []
         for x in range(BOARD_X):
             column = []
@@ -80,19 +80,19 @@ class Game:
         pygame.draw.rect(DISPLAY, BOARD, [X_MARGIN / 2, Y_MARGIN / 2, WINDOW_X - X_MARGIN, WINDOW_Y - Y_MARGIN])
         return board
 
-    def updateBoard(self, board):
+    def update_board(self, board):
         for card in Card.instances:
             if card.mode == 0:
-                self.drawCard(card, HIDDEN)
+                self.draw_card(card, HIDDEN)
             elif card.mode == 1:
-                self.drawCard(card, HIGHLIGHT)
+                self.draw_card(card, HIGHLIGHT)
             elif card.mode == 2:
-                self.drawCard(card, card.color)
-                self.drawCardIcon(card)
+                self.draw_card(card, card.color)
+                self.draw_card_icon(card)
 
 
     #---------- Card Creation/Updating ----------#
-    def drawCard(self, card, color):
+    def draw_card(self, card, color):
         pygame.draw.rect(DISPLAY, CARDSHADOW, [
             (CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), 
             (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2) + CELLSIZE - 1, 
@@ -102,12 +102,12 @@ class Game:
             (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), 
             CELLSIZE, CELLSIZE])
 
-    def leftTopCoords(self, card):
+    def left_top_coords(self, card):
         left = int((CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2))
         top = int((CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2))
         return (left, top)
 
-    def drawCardIcon(self, card):
+    def draw_card_icon(self, card):
         if card.color == COLOR_1:
             tint = TINT_1
         elif card.color == COLOR_2:
@@ -118,7 +118,7 @@ class Game:
             tint = TINT_4
         half = int(CELLSIZE * 0.5)
         quarter = int(CELLSIZE * 0.25)
-        left, top = self.leftTopCoords(card)
+        left, top = self.left_top_coords(card)
         if card.icon == DONUT:
             pygame.draw.circle(DISPLAY, tint, (left + half, top + half), half - 10)
             pygame.draw.circle(DISPLAY, card.color, (left + half, top + half), quarter - 2)
@@ -129,14 +129,14 @@ class Game:
         elif card.icon == CIRCLE:
             pygame.draw.circle(DISPLAY, tint, (left + half, top + half), half - 10)
 
-    def hideCard(self, card, clock):
+    def hide_card(self, card, clock):
         for coverage in range(0, 60, 4):
             pygame.draw.rect(DISPLAY, HIDDEN, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, coverage + 4])
             pygame.display.flip()
             clock.tick(FPS)
         card.mode = 0
 
-    def showCard(self, card, clock):
+    def show_card(self, card, clock):
         for coverage in range(0, 60, 6):
             pygame.draw.rect(DISPLAY, card.color, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, CELLSIZE])
             pygame.draw.rect(DISPLAY, HIDDEN, [(CELL_MARGIN + CELLSIZE) * card.x + X_MARGIN + (CELL_MARGIN / 2), (CELL_MARGIN + CELLSIZE) * card.y + Y_MARGIN + (CELL_MARGIN / 2), CELLSIZE, 60 - coverage])
@@ -145,7 +145,7 @@ class Game:
         Card.guesses.append(card)
         card.mode = 2
 
-    def updateText(self):
+    def update_text(self):
         remaining = str(round((len(Card.instances) - len(Card.correct)) / 2))
         fontObj = pygame.font.Font('OpenSans-Light.ttf', 24)
         textObj = fontObj.render('Remaining: ' + remaining, True, HIGHLIGHT, BACKGROUND)
@@ -155,7 +155,7 @@ class Game:
         DISPLAY.blit(textObj, textRect)
 
     #---------- Guessing ----------#
-    def checkGuess(self, clock):
+    def check_guess(self, clock):
         pygame.time.wait(500)
         first, second = Card.guesses[0], Card.guesses[1]
         if first.color == second.color and first.icon == second.icon:
@@ -164,7 +164,7 @@ class Game:
             del Card.guesses[:]
         else:
             for card in Card.guesses:
-                self.hideCard(card, clock)
+                self.hide_card(card, clock)
             del Card.guesses[:]
 
 
@@ -177,15 +177,15 @@ def main():
     while creating_board:
         DISPLAY.fill(BACKGROUND)
         game = Game()
-        icons = game.createIconList()
-        board = game.createBoard(icons)
-        game.updateBoard(board)
-        game.updateText()
+        icons = game.create_icon_list()
+        board = game.create_board(icons)
+        game.update_board(board)
+        game.update_text()
         creating_board = False
 
     random.shuffle(Card.instances)
     for card in Card.instances:
-        game.hideCard(card, clock)
+        game.hide_card(card, clock)
 
     guesses = 0
     running = True
@@ -210,16 +210,16 @@ def main():
                     for card in Card.instances:
                         if card.rect.collidepoint(mouse_x, mouse_y) and card not in Card.correct and card not in Card.guesses:
                             guesses += 1
-                            game.showCard(card, clock)
+                            game.show_card(card, clock)
 
-        game.updateBoard(board)
-        game.updateText()
+        game.update_board(board)
+        game.update_text()
         pygame.display.flip()
         clock.tick(FPS)
 
         # If two guesses made by end of frame, check for match
         if guesses == 2:
-            game.checkGuess(clock)
+            game.check_guess(clock)
             guesses = 0
 
         # If all cards present in 'correct' instances, game over
