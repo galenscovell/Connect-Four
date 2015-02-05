@@ -2,7 +2,7 @@
 import random
 
 class Card:
-    'Individual card info'
+    """Individual card object."""
     instances = []
     guesses = []
     correct = []
