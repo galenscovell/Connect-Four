@@ -1,3 +1,5 @@
+![alt tag](http://galenscovell.github.io/css/pics/memory.png)
+
 # Memory
 
 Memory game created with Python and Pygame. Feels good to make my own game from the ground up! Graphics and animations become much more complex when you have to draw everything meticulously yourself. :]
