@@ -1,4 +1,4 @@
-![alt tag](http://galenscovell.github.io/css/pics/memory.png)
+<img src='http://galenscovell.github.io/css/pics/memory.png' width=600px />
 
 # Memory
 
