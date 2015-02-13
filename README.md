@@ -1,4 +1,4 @@
-<img src='http://galenscovell.github.io/css/pics/memory.png' width=600px />
+<img src='http://galenscovell.github.io/css/pics/memory.png' width=500px />
 
 # Memory
 
@@ -20,9 +20,9 @@ Memory game created with Python and Pygame. Feels good to make my own game from 
 <b>Installing Unofficial pygame for Python 3.4:</b>
 * Save .whl file from above to somewhere you'll remember
 * Open a terminal
-* Enter: 'pip install wheel' (without quotes)
+* <blockquote>pip install wheel</blockquote>
 * Navigate to the previous directory with .whl file
-* Enter: 'pip install some-package.whl' (without quotes)
+* <blockquote>pip install package_name.whl</blockquote>
 
 
 Usage: <blockquote>python memory.py</blockquote>
